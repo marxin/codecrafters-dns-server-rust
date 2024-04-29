@@ -1,7 +1,7 @@
-use binrw::{BinReaderExt, BinWrite, BinWriterExt};
+use binrw::{BinReaderExt, BinWrite};
 use std::{io::Cursor, net::UdpSocket};
 
-use dns_starter_rust::message::{DnsHeader, DnsMessage, QueryResponseIndicator};
+use dns_starter_rust::message::{DnsMessage, QueryResponseIndicator};
 
 fn main() {
     let endpoint = "127.0.0.1:2053";

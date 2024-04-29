@@ -43,7 +43,7 @@ pub enum RecursionAvailable {
 #[br(map = Self::from_bytes)]
 pub struct DnsHeaderFlags {
     /// Recursion Desired (RD) Sender sets this to 1 if the server should recursively resolve this query, 0 otherwise.
-    pub recursion_desired: RecursionDesired,
+    recursion_desired: RecursionDesired,
     /// Truncation (TC) 1 if the message is larger than 512 bytes. Always 0 in UDP responses.
     pub truncation: Truncation,
     /// Authoritative Answer (AA) 1 if the responding server "owns" the domain queried, i.e., it's authoritative.
@@ -82,10 +82,10 @@ pub struct DnsHeader {
     /// Answer Record Count (ANCOUNT) Number of records in the Answer section.
     pub answer_count: u16,
 
-    /// Authority Record Count (NSCOUNT)	16 bits	Number of records in the Authority section.
+    /// Authority Record Count (NSCOUNT) Number of records in the Authority section.
     pub nscount: u16,
 
-    /// Additional Record Count (ARCOUNT)	16 bits	Number of records in the Additional section.
+    /// Additional Record Count (ARCOUNT) Number of records in the Additional section.
     pub arcount: u16,
 }
 
@@ -152,6 +152,6 @@ pub struct DnsQuestion {
 #[derive(BinRead, BinWrite, Debug, Clone)]
 pub struct DnsMessage {
     pub header: DnsHeader,
-    #[br(count = header.question_count)]
+    #[br(count = header.question_count as usize)]
     pub questions: Vec<DnsQuestion>,
 }
