@@ -1,4 +1,7 @@
-use std::net::UdpSocket;
+use binrw::BinReaderExt;
+use std::{io::Cursor, net::UdpSocket};
+
+use dns_starter_rust::message::DnsHeader;
 
 fn main() {
     let endpoint = "127.0.0.1:2053";
@@ -9,7 +12,16 @@ fn main() {
     loop {
         match udp_socket.recv_from(&mut buf) {
             Ok((size, source)) => {
-                println!("Received {} bytes from {}", size, source);
+                println!(
+                    "Received {} bytes from {}: {:x?}",
+                    size,
+                    source,
+                    &buf[..size]
+                );
+                let dns_header = Cursor::new(&buf[..size])
+                    .read_be::<DnsHeader>()
+                    .expect("expected UDP package header for request");
+                println!("{dns_header:?}");
 
                 let response = [];
                 udp_socket
