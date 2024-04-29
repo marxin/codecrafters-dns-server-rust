@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use binrw::{BinRead, BinWrite};
+use binrw::{BinRead, BinResult, BinWrite};
 use modular_bitfield::prelude::*;
 
 #[derive(BitfieldSpecifier, Debug)]
@@ -39,7 +39,7 @@ pub enum RecursionAvailable {
 }
 
 #[bitfield]
-#[derive(BinRead, BinWrite, Debug, Default)]
+#[derive(BinRead, BinWrite, Debug, Default, Clone)]
 #[br(map = Self::from_bytes)]
 pub struct DnsHeaderFlags {
     /// Recursion Desired (RD) Sender sets this to 1 if the server should recursively resolve this query, 0 otherwise.
@@ -55,7 +55,7 @@ pub struct DnsHeaderFlags {
 }
 
 #[bitfield]
-#[derive(BinRead, BinWrite, Debug, Default)]
+#[derive(BinRead, BinWrite, Debug, Default, Clone)]
 #[br(map = Self::from_bytes)]
 pub struct DnsHeaderFlags2 {
     /// Response Code (RCODE) Response code indicating the status of the response.
@@ -67,7 +67,7 @@ pub struct DnsHeaderFlags2 {
     pub recursion_available: RecursionAvailable,
 }
 
-#[derive(BinRead, BinWrite, Debug, Default)]
+#[derive(BinRead, BinWrite, Debug, Default, Clone)]
 pub struct DnsHeader {
     /// Packet Identifier (ID)A random ID assigned to query packets. Response packets must reply with the same ID.
     pub id: u16,
@@ -87,4 +87,71 @@ pub struct DnsHeader {
 
     /// Additional Record Count (ARCOUNT)	16 bits	Number of records in the Additional section.
     pub arcount: u16,
+}
+
+#[binrw::parser(reader)]
+fn parse_labels() -> BinResult<Vec<String>> {
+    let mut labels = Vec::new();
+
+    loop {
+        let mut length = [0u8; 1];
+        reader.read_exact(&mut length)?;
+        let label_length = length[0] as usize;
+        if label_length == 0 {
+            break;
+        }
+
+        let mut data = vec![0u8; label_length];
+        reader.read_exact(&mut data)?;
+        // TODO
+        labels.push(String::from_utf8(data).unwrap());
+    }
+
+    Ok(labels)
+}
+
+#[binrw::writer(writer)]
+fn write_labels(labels: &Vec<String>) -> BinResult<()> {
+    for part in labels {
+        writer.write_all(&[part.len() as u8])?;
+        writer.write_all(part.as_bytes())?;
+    }
+    writer.write_all(&[0u8])?;
+
+    Ok(())
+}
+
+#[derive(BinRead, BinWrite, Debug, Clone, Default)]
+pub struct QuestionLabel {
+    #[br(parse_with = parse_labels)]
+    #[bw(write_with = write_labels)]
+    labels: Vec<String>,
+}
+
+#[derive(BinRead, BinWrite, Debug, Clone)]
+#[brw(repr = u16)]
+pub enum QuestionType {
+    A = 1,
+    NS = 2,
+    CNAME = 5,
+}
+
+#[derive(BinRead, BinWrite, Debug, Clone)]
+#[brw(repr = u16)]
+pub enum QuestionClass {
+    Internet = 1,
+}
+
+#[derive(BinRead, BinWrite, Debug, Clone)]
+pub struct DnsQuestion {
+    label: QuestionLabel,
+    type_: QuestionType,
+    class: QuestionClass,
+}
+
+#[derive(BinRead, BinWrite, Debug, Clone)]
+pub struct DnsMessage {
+    pub header: DnsHeader,
+    #[br(count = header.question_count)]
+    pub questions: Vec<DnsQuestion>,
 }

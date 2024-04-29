@@ -1,7 +1,7 @@
 use binrw::{BinReaderExt, BinWrite, BinWriterExt};
 use std::{io::Cursor, net::UdpSocket};
 
-use dns_starter_rust::message::{DnsHeader, QueryResponseIndicator};
+use dns_starter_rust::message::{DnsHeader, DnsMessage, QueryResponseIndicator};
 
 fn main() {
     let endpoint = "127.0.0.1:2053";
@@ -18,14 +18,19 @@ fn main() {
                     source,
                     &buf[..size]
                 );
-                let dns_header = Cursor::new(&buf[..size])
-                    .read_be::<DnsHeader>()
+                let dns_query = Cursor::new(&buf[..size])
+                    .read_be::<DnsMessage>()
                     .expect("expected UDP package header for request");
-                println!("request: {dns_header:?}");
+                println!("request: {dns_query:?}");
 
-                let mut dns_response = DnsHeader::default();
-                dns_response.id = 1234;
-                dns_response.flags.set_qr(QueryResponseIndicator::Response);
+                let mut dns_response = dns_query.clone();
+                dns_response.header.id = 1234;
+                dns_response
+                    .header
+                    .flags
+                    .set_qr(QueryResponseIndicator::Response);
+                dns_response.header.arcount = 0;
+
                 println!("response: {dns_response:?}");
 
                 let mut output = Cursor::new(Vec::new());
