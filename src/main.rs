@@ -27,12 +27,12 @@ fn main() {
                 println!("request: {dns_query:?}");
 
                 let mut dns_response = dns_query.clone();
-                dns_response.header.id = 1234;
                 dns_response
                     .header
                     .flags
                     .set_qr(QueryResponseIndicator::Response);
                 dns_response.header.arcount = 0;
+                dns_response.header.flags2.set_response(if dns_query.header.flags.opcode() == 0 { 0} else {4});
                 dns_response.header.answer_count = 1;
                 dns_response.resource_records.push(DnsResourceRecord {
                     name: dns_query.questions.first().unwrap().label.clone(),
