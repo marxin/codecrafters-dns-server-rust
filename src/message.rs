@@ -120,7 +120,7 @@ fn write_labels(labels: &Vec<String>) -> BinResult<()> {
 }
 
 #[derive(BinRead, BinWrite, Debug, Clone, Default)]
-pub struct QuestionLabel {
+pub struct DnsLabel {
     #[br(parse_with = parse_labels)]
     #[bw(write_with = write_labels)]
     labels: Vec<String>,
@@ -142,9 +142,24 @@ pub enum QuestionClass {
 
 #[derive(BinRead, BinWrite, Debug, Clone)]
 pub struct DnsQuestion {
-    label: QuestionLabel,
-    type_: QuestionType,
-    class: QuestionClass,
+    pub label: DnsLabel,
+    pub kind: QuestionType,
+    pub class: QuestionClass,
+}
+
+#[derive(BinWrite, Debug, Clone)]
+pub enum DnsResourceRecordData {
+    #[bw(magic = 4u16)]
+    A { ip: [u8; 4] },
+}
+
+#[derive(BinWrite, Debug, Clone)]
+pub struct DnsResourceRecord {
+    pub name: DnsLabel,
+    pub kind: QuestionType,
+    pub class: QuestionClass,
+    pub ttl: u32,
+    pub data: DnsResourceRecordData,
 }
 
 #[derive(BinRead, BinWrite, Debug, Clone)]
@@ -152,4 +167,6 @@ pub struct DnsMessage {
     pub header: DnsHeader,
     #[br(count = header.question_count as usize)]
     pub questions: Vec<DnsQuestion>,
+    #[br(ignore)]
+    pub resource_records: Vec<DnsResourceRecord>,
 }

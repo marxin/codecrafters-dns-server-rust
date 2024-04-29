@@ -1,7 +1,10 @@
 use binrw::{BinReaderExt, BinWrite};
 use std::{io::Cursor, net::UdpSocket};
 
-use dns_starter_rust::message::{DnsMessage, QueryResponseIndicator};
+use dns_starter_rust::message::{
+    DnsMessage, DnsResourceRecord, DnsResourceRecordData, QueryResponseIndicator, QuestionClass,
+    QuestionType,
+};
 
 fn main() {
     let endpoint = "127.0.0.1:2053";
@@ -30,6 +33,14 @@ fn main() {
                     .flags
                     .set_qr(QueryResponseIndicator::Response);
                 dns_response.header.arcount = 0;
+                dns_response.header.answer_count = 1;
+                dns_response.resource_records.push(DnsResourceRecord {
+                    name: dns_query.questions.first().unwrap().label.clone(),
+                    class: QuestionClass::Internet,
+                    kind: QuestionType::A,
+                    ttl: 60,
+                    data: DnsResourceRecordData::A { ip: [8, 8, 8, 8] },
+                });
 
                 println!("response: {dns_response:?}");
 
