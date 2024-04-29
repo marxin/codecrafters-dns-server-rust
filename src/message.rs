@@ -89,6 +89,8 @@ pub struct DnsHeader {
 
 #[binrw::parser(reader)]
 fn parse_labels() -> BinResult<Vec<String>> {
+    println!("{:?}", reader.stream_position());
+
     let mut labels = Vec::new();
 
     loop {
