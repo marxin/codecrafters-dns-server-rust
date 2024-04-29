@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use binrw::{BinRead, BinResult, BinWrite};
 use modular_bitfield::prelude::*;
 
@@ -43,7 +41,7 @@ pub enum RecursionAvailable {
 #[br(map = Self::from_bytes)]
 pub struct DnsHeaderFlags {
     /// Recursion Desired (RD) Sender sets this to 1 if the server should recursively resolve this query, 0 otherwise.
-    recursion_desired: RecursionDesired,
+    pub recursion_desired: RecursionDesired,
     /// Truncation (TC) 1 if the message is larger than 512 bytes. Always 0 in UDP responses.
     pub truncation: Truncation,
     /// Authoritative Answer (AA) 1 if the responding server "owns" the domain queried, i.e., it's authoritative.
