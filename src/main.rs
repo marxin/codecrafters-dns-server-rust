@@ -10,6 +10,13 @@ fn main() {
     let endpoint = "127.0.0.1:2053";
     println!("Listening at: {endpoint}");
 
+    /*
+    let data: [u8; 53] = [0x90, 0xdc, 1, 0, 0, 2, 0, 0, 0, 0, 0, 0, 3, 0x61, 0x62, 0x63, 0x11, 0x6c, 0x6f, 0x6e, 0x67, 0x61, 0x73, 0x73, 0x64, 0x6f, 0x6d, 0x61, 0x69, 0x6e, 0x6e, 0x61, 0x6d, 0x65, 3, 0x63, 0x6f, 0x6d, 0, 0, 1, 0, 1, 3, 0x64, 0x65, 0x66, 0xc0, 0x10, 0, 1, 0, 1];
+    let x = Cursor::new(data).read_be::<DnsMessage>();
+    println!("{x:?}");
+    todo!();
+    */
+
     let udp_socket = UdpSocket::bind(endpoint).expect("Failed to bind to address");
     let mut buf = [0; 512];
     loop {
@@ -32,7 +39,14 @@ fn main() {
                     .flags
                     .set_qr(QueryResponseIndicator::Response);
                 dns_response.header.arcount = 0;
-                dns_response.header.flags2.set_response(if dns_query.header.flags.opcode() == 0 { 0} else {4});
+                dns_response
+                    .header
+                    .flags2
+                    .set_response(if dns_query.header.flags.opcode() == 0 {
+                        0
+                    } else {
+                        4
+                    });
                 dns_response.header.answer_count = 1;
                 dns_response.resource_records.push(DnsResourceRecord {
                     name: dns_query.questions.first().unwrap().label.clone(),

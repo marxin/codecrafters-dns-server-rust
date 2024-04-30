@@ -1,5 +1,6 @@
 use binrw::{BinRead, BinResult, BinWrite};
 use modular_bitfield::prelude::*;
+use std::io::SeekFrom;
 
 #[derive(BitfieldSpecifier, Debug)]
 #[bits = 1]
@@ -87,15 +88,26 @@ pub struct DnsHeader {
     pub arcount: u16,
 }
 
-#[binrw::parser(reader)]
+#[binrw::parser(reader, endian)]
 fn parse_labels() -> BinResult<Vec<String>> {
-    println!("{:?}", reader.stream_position());
-
     let mut labels = Vec::new();
 
     loop {
         let mut length = [0u8; 1];
         reader.read_exact(&mut length)?;
+        const OFFSET_MASK: u8 = 0b1100_0000;
+        if length[0] & OFFSET_MASK != 0 {
+            let mut offset = ((length[0] & (!OFFSET_MASK)) as u64) << 8;
+            reader.read_exact(&mut length)?;
+            offset += length[0] as u64;
+            let current_position = reader.stream_position()?;
+            reader.seek(SeekFrom::Start(offset))?;
+            let offset_labels = parse_labels(reader, endian, ())?;
+            labels.extend(offset_labels);
+            reader.seek(SeekFrom::Start(current_position))?;
+            break;
+        }
+
         let label_length = length[0] as usize;
         if label_length == 0 {
             break;
