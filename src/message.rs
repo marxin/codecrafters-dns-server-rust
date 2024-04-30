@@ -163,7 +163,7 @@ pub struct DnsQuestion {
 
 #[derive(BinWrite, BinRead, Debug, Clone)]
 pub enum DnsResourceRecordData {
-    #[bw(magic = 4u16)]
+    #[brw(magic = 4u16)]
     A { ip: [u8; 4] },
 }
 
