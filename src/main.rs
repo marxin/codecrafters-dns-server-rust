@@ -1,12 +1,35 @@
 use binrw::{BinReaderExt, BinWrite};
-use std::{env, io::Cursor, net::UdpSocket};
+use std::{env, io::{Cursor, Read}, net::UdpSocket};
 
 use dns_starter_rust::message::{
-    DnsMessage, DnsResourceRecord, DnsResourceRecordData, QueryResponseIndicator, QuestionClass,
-    QuestionType,
+    DnsMessage, DnsQuestion, DnsResourceRecord, DnsResourceRecordData, QueryResponseIndicator, QuestionClass, QuestionType
 };
 
 const ENDPOINT: &str = "127.0.0.1:2053";
+const CLIENT_ENDPOINT: &str = "127.0.0.1:2054";
+
+fn resolve_question(question: &DnsQuestion, resolver: &str) -> DnsResourceRecord {
+    let udp_socket = UdpSocket::bind(CLIENT_ENDPOINT).unwrap();
+    udp_socket.connect(resolver).unwrap();
+    let mut dns_message = DnsMessage::default();
+    dns_message.header.question_count = 1;
+    dns_message.questions.push(question.clone());
+
+    let mut output = Cursor::new(Vec::new());
+    dns_message.write_be(&mut output).unwrap();
+    let data = output.into_inner();
+    udp_socket.send(&data).unwrap();
+
+    let mut buf = [0; 512];
+    let (size, _) = udp_socket.recv_from(&mut buf).unwrap();
+
+    let dns_reply = Cursor::new(&buf[..size])
+        .read_be::<DnsMessage>()
+        .expect("expected UDP package header as reply");
+
+    dbg!(dns_reply);
+    todo!();
+}
 
 fn run_resolver(resolver: &str) -> anyhow::Result<()> {
     let udp_socket = UdpSocket::bind(ENDPOINT).expect("Failed to bind to address");
@@ -18,6 +41,10 @@ fn run_resolver(resolver: &str) -> anyhow::Result<()> {
                     .read_be::<DnsMessage>()
                     .expect("expected UDP package header for request");
                 println!("request: {dns_query:?}");
+
+                for question in dns_query.questions.iter() {
+                    resolve_question(&question, resolver);
+                }
             },
             Err(err) => anyhow::bail!(err)
         }

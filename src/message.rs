@@ -176,7 +176,7 @@ pub struct DnsResourceRecord {
     pub data: DnsResourceRecordData,
 }
 
-#[derive(BinRead, BinWrite, Debug, Clone)]
+#[derive(BinRead, BinWrite, Debug, Clone, Default)]
 pub struct DnsMessage {
     pub header: DnsHeader,
     #[br(count = header.question_count as usize)]
