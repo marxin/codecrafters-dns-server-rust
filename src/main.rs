@@ -47,7 +47,7 @@ fn main() {
                     } else {
                         4
                     });
-                dns_response.header.answer_count = 1;
+                dns_response.header.answer_count = dns_query.questions.len() as u16;
 
                 for question in dns_query.questions.iter() {
                     dns_response.resource_records.push(DnsResourceRecord {
