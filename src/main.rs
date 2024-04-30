@@ -1,14 +1,37 @@
 use binrw::{BinReaderExt, BinWrite};
-use std::{io::Cursor, net::UdpSocket};
+use std::{env, io::Cursor, net::UdpSocket};
 
 use dns_starter_rust::message::{
     DnsMessage, DnsResourceRecord, DnsResourceRecordData, QueryResponseIndicator, QuestionClass,
     QuestionType,
 };
 
+const ENDPOINT: &str = "127.0.0.1:2053";
+
+fn run_resolver(resolver: &str) -> anyhow::Result<()> {
+    let udp_socket = UdpSocket::bind(ENDPOINT).expect("Failed to bind to address");
+    let mut buf = [0; 512];
+    loop {
+        match udp_socket.recv_from(&mut buf) {
+            Ok((size, source)) => {
+                let dns_query = Cursor::new(&buf[..size])
+                    .read_be::<DnsMessage>()
+                    .expect("expected UDP package header for request");
+                println!("request: {dns_query:?}");
+            },
+            Err(err) => anyhow::bail!(err)
+        }
+    }
+}
+
 fn main() {
-    let endpoint = "127.0.0.1:2053";
-    println!("Listening at: {endpoint}");
+    let args: Vec<String> = env::args().collect();
+    if args.len() == 3 {
+        assert_eq!(args[1], "--resolver");
+        run_resolver(&args[2]).unwrap();
+    }
+
+    println!("Listening at: {ENDPOINT}");
 
     /*
     let data: [u8; 53] = [0x90, 0xdc, 1, 0, 0, 2, 0, 0, 0, 0, 0, 0, 3, 0x61, 0x62, 0x63, 0x11, 0x6c, 0x6f, 0x6e, 0x67, 0x61, 0x73, 0x73, 0x64, 0x6f, 0x6d, 0x61, 0x69, 0x6e, 0x6e, 0x61, 0x6d, 0x65, 3, 0x63, 0x6f, 0x6d, 0, 0, 1, 0, 1, 3, 0x64, 0x65, 0x66, 0xc0, 0x10, 0, 1, 0, 1];
@@ -17,7 +40,7 @@ fn main() {
     todo!();
     */
 
-    let udp_socket = UdpSocket::bind(endpoint).expect("Failed to bind to address");
+    let udp_socket = UdpSocket::bind(ENDPOINT).expect("Failed to bind to address");
     let mut buf = [0; 512];
     loop {
         match udp_socket.recv_from(&mut buf) {
