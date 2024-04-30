@@ -50,6 +50,14 @@ fn run_resolver(resolver: &str) -> anyhow::Result<()> {
                     .header
                     .flags
                     .set_qr(QueryResponseIndicator::Response);
+                dns_response
+                    .header
+                    .flags2
+                    .set_response(if dns_query.header.flags.opcode() == 0 {
+                        0
+                    } else {
+                        4
+                    });
                 assert_eq!(dns_response.resource_records.len(), 0);
 
                 for question in dns_query.questions.iter() {
