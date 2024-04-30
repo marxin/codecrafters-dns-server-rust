@@ -27,7 +27,7 @@ fn resolve_question(question: &DnsQuestion, resolver: &str) -> DnsResourceRecord
         .read_be::<DnsMessage>()
         .expect("expected UDP package header as reply");
 
-    dbg!(dns_reply);
+    println!("reply: {dns_reply:?}");
     todo!();
 }
 

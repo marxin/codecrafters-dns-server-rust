@@ -161,13 +161,13 @@ pub struct DnsQuestion {
     pub class: QuestionClass,
 }
 
-#[derive(BinWrite, Debug, Clone)]
+#[derive(BinWrite, BinRead, Debug, Clone)]
 pub enum DnsResourceRecordData {
     #[bw(magic = 4u16)]
     A { ip: [u8; 4] },
 }
 
-#[derive(BinWrite, Debug, Clone)]
+#[derive(BinWrite, BinRead, Debug, Clone)]
 pub struct DnsResourceRecord {
     pub name: DnsLabel,
     pub kind: QuestionType,
@@ -181,6 +181,6 @@ pub struct DnsMessage {
     pub header: DnsHeader,
     #[br(count = header.question_count as usize)]
     pub questions: Vec<DnsQuestion>,
-    #[br(ignore)]
+    #[br(count = header.answer_count as usize)]
     pub resource_records: Vec<DnsResourceRecord>,
 }
