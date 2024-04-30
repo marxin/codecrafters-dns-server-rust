@@ -8,27 +8,29 @@ use dns_starter_rust::message::{
 const ENDPOINT: &str = "127.0.0.1:2053";
 const CLIENT_ENDPOINT: &str = "127.0.0.1:2054";
 
-fn resolve_question(question: &DnsQuestion, resolver: &str) -> DnsResourceRecord {
-    let udp_socket = UdpSocket::bind(CLIENT_ENDPOINT).unwrap();
-    udp_socket.connect(resolver).unwrap();
+fn resolve_question(question: &DnsQuestion, resolver: &str) -> anyhow::Result<DnsResourceRecord> {
+    let udp_socket = UdpSocket::bind(CLIENT_ENDPOINT)?;
+    udp_socket.connect(resolver)?;
     let mut dns_message = DnsMessage::default();
     dns_message.header.question_count = 1;
     dns_message.questions.push(question.clone());
 
     let mut output = Cursor::new(Vec::new());
-    dns_message.write_be(&mut output).unwrap();
+    dns_message.write_be(&mut output)?;
     let data = output.into_inner();
-    udp_socket.send(&data).unwrap();
+    udp_socket.send(&data)?;
 
     let mut buf = [0; 512];
-    let (size, _) = udp_socket.recv_from(&mut buf).unwrap();
+    let (size, _) = udp_socket.recv_from(&mut buf)?;
 
     let dns_reply = Cursor::new(&buf[..size])
         .read_be::<DnsMessage>()
         .expect("expected UDP package header as reply");
+    if dns_reply.header.answer_count != 1 {
+        anyhow::bail!("Unexpected number of answers: {}", dns_reply.header.answer_count);
+    }
 
-    println!("reply: {dns_reply:?}");
-    todo!();
+    Ok(dns_reply.resource_records.first().unwrap().clone())
 }
 
 fn run_resolver(resolver: &str) -> anyhow::Result<()> {
@@ -42,9 +44,25 @@ fn run_resolver(resolver: &str) -> anyhow::Result<()> {
                     .expect("expected UDP package header for request");
                 println!("request: {dns_query:?}");
 
+                let mut dns_response = dns_query.clone();
+                dns_response
+                    .header
+                    .flags
+                    .set_qr(QueryResponseIndicator::Response);
+                assert_eq!(dns_response.resource_records.len(), 0);
+
                 for question in dns_query.questions.iter() {
-                    resolve_question(&question, resolver);
+                    dns_response.resource_records.push(resolve_question(&question, resolver)?);
+                    dns_response.header.answer_count += 1;
                 }
+
+                let mut output = Cursor::new(Vec::new());
+                dns_response.write_be(&mut output).unwrap();
+                let response = output.into_inner();
+
+                udp_socket
+                    .send_to(&response, source)
+                    .expect("Failed to send response");
             },
             Err(err) => anyhow::bail!(err)
         }
