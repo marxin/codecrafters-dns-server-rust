@@ -48,13 +48,16 @@ fn main() {
                         4
                     });
                 dns_response.header.answer_count = 1;
-                dns_response.resource_records.push(DnsResourceRecord {
-                    name: dns_query.questions.first().unwrap().label.clone(),
-                    class: QuestionClass::Internet,
-                    kind: QuestionType::A,
-                    ttl: 60,
-                    data: DnsResourceRecordData::A { ip: [8, 8, 8, 8] },
-                });
+
+                for question in dns_query.questions.iter() {
+                    dns_response.resource_records.push(DnsResourceRecord {
+                        name: question.label.clone(),
+                        class: QuestionClass::Internet,
+                        kind: QuestionType::A,
+                        ttl: 60,
+                        data: DnsResourceRecordData::A { ip: [8, 8, 8, 8] },
+                    });
+                }
 
                 println!("response: {dns_response:?}");
 
