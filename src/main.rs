@@ -29,6 +29,7 @@ fn resolve_question(question: &DnsQuestion, resolver: &str) -> anyhow::Result<Dn
     if dns_reply.header.answer_count != 1 {
         anyhow::bail!("Unexpected number of answers: {}", dns_reply.header.answer_count);
     }
+    println!("resolver returned: {dns_reply:?}");
 
     Ok(dns_reply.resource_records.first().unwrap().clone())
 }
@@ -59,6 +60,7 @@ fn run_resolver(resolver: &str) -> anyhow::Result<()> {
                 let mut output = Cursor::new(Vec::new());
                 dns_response.write_be(&mut output).unwrap();
                 let response = output.into_inner();
+                println!("sending reply: {dns_response:?}");
 
                 udp_socket
                     .send_to(&response, source)
