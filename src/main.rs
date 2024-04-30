@@ -73,6 +73,8 @@ fn run_resolver(resolver: &str) -> anyhow::Result<()> {
 
 fn main() {
     let args: Vec<String> = env::args().collect();
+    println!("program arguments: {args:?}");
+
     if args.len() == 3 {
         assert_eq!(args[1], "--resolver");
         run_resolver(&args[2]).unwrap();
