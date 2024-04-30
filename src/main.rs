@@ -1,8 +1,13 @@
 use binrw::{BinReaderExt, BinWrite};
-use std::{env, io::{Cursor, Read}, net::UdpSocket};
+use std::{
+    env,
+    io::{Cursor},
+    net::UdpSocket,
+};
 
 use dns_starter_rust::message::{
-    DnsMessage, DnsQuestion, DnsResourceRecord, DnsResourceRecordData, QueryResponseIndicator, QuestionClass, QuestionType
+    DnsMessage, DnsQuestion, DnsResourceRecord, DnsResourceRecordData, QueryResponseIndicator,
+    QuestionClass, QuestionType,
 };
 
 const ENDPOINT: &str = "127.0.0.1:2053";
@@ -27,7 +32,10 @@ fn resolve_question(question: &DnsQuestion, resolver: &str) -> anyhow::Result<Dn
         .read_be::<DnsMessage>()
         .expect("expected UDP package header as reply");
     if dns_reply.header.answer_count != 1 {
-        anyhow::bail!("Unexpected number of answers: {}", dns_reply.header.answer_count);
+        anyhow::bail!(
+            "Unexpected number of answers: {}",
+            dns_reply.header.answer_count
+        );
     }
     println!("resolver returned: {dns_reply:?}");
 
@@ -61,7 +69,9 @@ fn run_resolver(resolver: &str) -> anyhow::Result<()> {
                 assert_eq!(dns_response.resource_records.len(), 0);
 
                 for question in dns_query.questions.iter() {
-                    dns_response.resource_records.push(resolve_question(&question, resolver)?);
+                    dns_response
+                        .resource_records
+                        .push(resolve_question(question, resolver)?);
                     dns_response.header.answer_count += 1;
                 }
 
@@ -73,8 +83,8 @@ fn run_resolver(resolver: &str) -> anyhow::Result<()> {
                 udp_socket
                     .send_to(&response, source)
                     .expect("Failed to send response");
-            },
-            Err(err) => anyhow::bail!(err)
+            }
+            Err(err) => anyhow::bail!(err),
         }
     }
 }
