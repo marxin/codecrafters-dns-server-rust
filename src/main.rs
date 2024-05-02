@@ -1,7 +1,7 @@
 use binrw::{BinReaderExt, BinWrite};
 use std::{
     env,
-    io::{Cursor},
+    io::Cursor,
     net::UdpSocket,
 };
 

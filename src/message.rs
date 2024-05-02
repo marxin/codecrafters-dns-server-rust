@@ -38,8 +38,9 @@ pub enum RecursionAvailable {
 }
 
 #[bitfield]
-#[derive(BinRead, BinWrite, Debug, Default, Clone)]
+#[derive(BinRead, BinWrite, Debug, Default, Clone, Copy)]
 #[br(map = Self::from_bytes)]
+#[bw(map = |&x| Self::into_bytes(x))]
 pub struct DnsHeaderFlags {
     /// Recursion Desired (RD) Sender sets this to 1 if the server should recursively resolve this query, 0 otherwise.
     pub recursion_desired: RecursionDesired,
@@ -54,8 +55,9 @@ pub struct DnsHeaderFlags {
 }
 
 #[bitfield]
-#[derive(BinRead, BinWrite, Debug, Default, Clone)]
+#[derive(BinRead, BinWrite, Debug, Default, Clone, Copy)]
 #[br(map = Self::from_bytes)]
+#[bw(map = |&x| Self::into_bytes(x))]
 pub struct DnsHeaderFlags2 {
     /// Response Code (RCODE) Response code indicating the status of the response.
     pub response: B4,
