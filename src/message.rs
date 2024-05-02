@@ -90,7 +90,7 @@ pub struct DnsHeader {
     pub arcount: u16,
 }
 
-#[binrw::parser(reader, endian)]
+#[binrw::parser(reader, endian: _endian)]
 fn parse_labels() -> BinResult<Vec<String>> {
     let mut labels = Vec::new();
 
@@ -104,7 +104,7 @@ fn parse_labels() -> BinResult<Vec<String>> {
             offset += length[0] as u64;
             let current_position = reader.stream_position()?;
             reader.seek(SeekFrom::Start(offset))?;
-            let offset_labels = parse_labels(reader, endian, ())?;
+            let offset_labels = parse_labels(reader, _endian, ())?;
             labels.extend(offset_labels);
             reader.seek(SeekFrom::Start(current_position))?;
             break;
