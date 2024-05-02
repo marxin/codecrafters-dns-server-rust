@@ -1,9 +1,5 @@
 use binrw::{BinReaderExt, BinWrite};
-use std::{
-    env,
-    io::Cursor,
-    net::UdpSocket,
-};
+use std::{env, io::Cursor, net::UdpSocket};
 
 use dns_starter_rust::message::{
     DnsMessage, DnsQuestion, DnsResourceRecord, DnsResourceRecordData, QueryResponseIndicator,
